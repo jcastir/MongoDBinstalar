@@ -1,0 +1,46 @@
+1. create collection restaurants 
+
+ db.createCollection("restaurants", { capped : true, size : 5242880, max : 5000 } ) ; 
+
+
+mongoimport --db test --collection restaurants --file /tmp/retaurants.json --jsonArray
+
+mongoimport --db test --collection restaurants < /tmp/retaurants.json 
+
+
+2.db.restaurants.find({},{"restaurant_id" : 1,"name":1,"borough":1,"cuisine" :1});
+ db.restaurants.find( { "zipcode": { $gt: 4 } } )
+
+
+3.db.restaurants.find({},{"restaurant_id" : 1,"name":1,"borough":1,"cuisine" :1,"_id":0});
+
+
+5.db.restaurants.find({"borough": "Bronx"});
+
+db.restaurants.find({"borough": "Bronx"},{"_id":0});
+db.restaurants.find({"borough": "Bronx"}).skip(5).limit(5);
+
+db.restaurants.find({grades : { $elemMatch:{"score":{$gt : 90}}}});
+db.restaurants.find({grades : { $elemMatch:{"score":{$gt : 80 , $lt :100}}}});
+
+
+db.restaurants.find({"address.coord" : {$lt : -95.754168}});
+
+db.restaurants.find(
+               {$and:
+                    [
+                       {"cuisine" : {$ne :"American "}},
+                       {"grades.score" : {$gt : 70}},
+                       {"address.coord" : {$lt : -65.754168}}
+                    ]
+                }
+                    );
+
+
+db.restaurants.find({name: /^Wil/},{"restaurant_id" : 1,"name":1,"borough":1,"cuisine" :1});
+
+db.restaurants.find({name: /ces$/},{"restaurant_id" : 1,"name":1,"borough":1,"cuisine" :1});
+
+
+
+

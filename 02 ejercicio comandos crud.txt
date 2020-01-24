@@ -1,0 +1,160 @@
+https://docs.mongodb.com/manual/crud/
+
+Vamos a realizar las primeras operaciones en la base de datos mongodb
+
+> show dbs
+admin   0.000GB
+config  0.000GB
+local   0.000GB
+> use mongo
+switched to db mongo
+> show dbs
+admin   0.000GB
+config  0.000GB
+local   0.000GB
+> db
+mongo
+>
+El formato que se usa en el lenguaje mongo y javascript es del tipo ....
+
+db.collection.funcion.funcion...... 
+
+Ejemplo sencillo para insertar.  equivalente a insert into 
+
+db.users.insertOne( 
+
+{ name:"pepito", age : 40, status: "pending" }
+
+)
+{
+        "acknowledged" : true,
+        "insertedId" : ObjectId("5d5fe5e9780320c729d7a59c")
+}
+ejemplo parecido a select * from collection ;
+
+>
+> db.users.find() ;
+{ "_id" : ObjectId("5d5fe5e9780320c729d7a59c"), "name" : "pepito", "age" : 40, "status" : "pending" }
+>
+
+
+> exit
+bye
+[root@mongo1 ~]# mongo
+
+
+> show dbs
+admin   0.000GB
+config  0.000GB
+local   0.000GB
+mongo   0.000GB   <---- creada en el momento que se ha hecho el insert.
+>
+
+
+
+
+Fijemonos en dos cosas:
+
+- no existía la base de datos mongo, ya está creada.
+- cada registro tiene un "_id" identificativo del registro.
+
+
+
+> db.users.find().count(); equivalente a  select count(*) from collection; 
+
+0
+> use mongo
+switched to db mongo
+> db.users.find().count();
+1
+>
+
+Inserción de un registro solo.
+
+db.users.insertOne( 
+
+{ name:"juanito", age : 20, status: "not pending" }
+
+)
+
+Búsquedas con operador $gt 
+
+db.users.find ( 
+
+{ age: { $gt : 21}} 
+
+)
+
+> db.users.find ( { age: { $gt : 21}} )
+{ "_id" : ObjectId("5c8f6985e49573620c65997e"), "name" : "pepito", "age" : 40, "
+status" : "pending" }
+
+
+Update Operations
+
+db.users.updateOne(  { age : { $eq: 40 } }, { $set: { status : "pendinging" } }
+)
+
+
+
+
+Bulk write con insert 
+Text Search , búsquedas de strings.
+creación de índice sencilla. 
+
+db.stores.insert(
+   [
+     { _id: 1, name: "Java Hut", description: "Coffee and cakes" },
+     { _id: 2, name: "Burger Buns", description: "Gourmet hamburgers" },
+     { _id: 3, name: "Coffee Shop", description: "Just coffee" },
+     { _id: 4, name: "Clothes Clothes Clothes", description: "Discount clothing" },
+     { _id: 5, name: "Java Shopping", description: "Indonesian goods" }
+   ]
+)
+
+db.stores.find( { $text: { $search: "java coffee shop" } } )
+
+db.stores.createIndex( { name: "text", description: "text" } )
+
+db.stores.find( { $text: { $search: "java coffee shop" } } )
+db.stores.find( { $text: { $search: "java shop -coffee" } } )
+
+
+> db.stores.find( { $text: { $search: "java coffee shop" } } )
+{ "_id" : 3, "name" : "Coffee Shop", "description" : "Just coffee" }
+{ "_id" : 1, "name" : "Java Hut", "description" : "Coffee and cakes" }
+{ "_id" : 5, "name" : "Java Shopping", "description" : "Indonesian goods" }
+> db.stores.find( { $text: { $search: "java shop -coffee" } } )
+{ "_id" : 5, "name" : "Java Shopping", "description" : "Indonesian goods" }
+>
+
+Exact Phrase 
+
+db.stores.find( { $text: { $search: "\"coffee shop\"" } } )
+
+Sorting 
+
+> db.stores.find().sort({ name: -1 })
+;
+{ "_id" : 5, "name" : "Java Shopping", "description" : "Indonesian goods" }
+{ "_id" : 1, "name" : "Java Hut", "description" : "Coffee and cakes" }
+{ "_id" : 3, "name" : "Coffee Shop", "description" : "Just coffee" }
+{ "_id" : 4, "name" : "Clothes Clothes Clothes", "description" : "Discount cloth
+ing" }
+{ "_id" : 2, "name" : "Burger Buns", "description" : "Gourmet hamburgers" }
+> db.stores.find().sort({ name: 1 });
+
+{ "_id" : 2, "name" : "Burger Buns", "description" : "Gourmet hamburgers" }
+{ "_id" : 4, "name" : "Clothes Clothes Clothes", "description" : "Discount cloth
+ing" }
+{ "_id" : 3, "name" : "Coffee Shop", "description" : "Just coffee" }
+{ "_id" : 1, "name" : "Java Hut", "description" : "Coffee and cakes" }
+{ "_id" : 5, "name" : "Java Shopping", "description" : "Indonesian goods" }
+>
+
+
+
+
+
+
+

@@ -1,0 +1,160 @@
+The mongo Shell
+
+El shell de mongo es una interfaz interactiva en JavaScript para conectar a la base de datos. Viene con un paquete durante la instalación mongo-shell 
+
+
+Hay que buscar la shell y donde se encuentra. 
+
+
+[root@localhost selinux]# which mongo
+/usr/bin/mongo
+[root@localhost selinux]#
+
+Habría varias formas de conectar. 
+
+[root@localhost selinux]# mongo   <--- conexión a puerto por defecto. 
+
+MongoDB shell version v4.2.0
+connecting to: mongodb://127.0.0.1:27017/?compressors=disabled&gssapiServiceName=mongodb
+Implicit session: session { "id" : UUID("04f203e5-ca5d-4825-ac60-f473e9d7e77c") }
+MongoDB server version: 4.2.0
+Welcome to the MongoDB shell.
+For interactive help, type "help".
+For more comprehensive documentation, see
+        http://docs.mongodb.org/
+Questions? Try the support group
+        http://groups.google.com/group/mongodb-user
+Server has startup warnings:
+2019-08-21T07:30:07.748-0500 I  STORAGE  [initandlisten]
+2019-08-21T07:30:07.748-0500 I  STORAGE  [initandlisten] ** WARNING: Using the XFS filesystem is strongly recommended with the WiredTiger storage engine
+2019-08-21T07:30:07.748-0500 I  STORAGE  [initandlisten] **          See http://dochub.mongodb.org/core/prodnotes-filesystem
+2019-08-21T07:30:09.030-0500 I  CONTROL  [initandlisten]
+2019-08-21T07:30:09.031-0500 I  CONTROL  [initandlisten] ** WARNING: Access control is not enabled for the database.
+2019-08-21T07:30:09.031-0500 I  CONTROL  [initandlisten] **          Read and write access to data and configuration is unrestricted.
+2019-08-21T07:30:09.031-0500 I  CONTROL  [initandlisten]
+2019-08-21T07:30:09.031-0500 I  CONTROL  [initandlisten]
+2019-08-21T07:30:09.031-0500 I  CONTROL  [initandlisten] ** WARNING: soft rlimits too low. rlimits set to 1024 processes, 64000 files. Number of processes should be at least 32000 : 0.5 times number of files.
+MongoDB Enterprise >
+
+[root@localhost selinux]# mongo --port 27017  <--- especifico puerto. 
+
+
+Tercera forma, con url u opción host... 
+
+mongo "mongodb://localhost:27017"
+
+
+mongo --host localhost:27017
+
+
+mongo --host localhost --port 27017
+
+
+Cadenas de conexión 
+
+El ejemplo típico de una cadena de conexión sería ....  mongo "mongodb://alice@localhost:27017/?authSource=admin" 
+
+Donde alice es usuario 
+donde admin es la base de datos. 
+
+Vamos a crear un usuario de prueba en la base de datos Admin. 
+
+[root@localhost selinux]# mongo
+
+
+MongoDB Enterprise > show databases
+admin   0.000GB
+config  0.000GB
+local   0.000GB
+MongoDB Enterprise > show users
+MongoDB Enterprise > use admin
+switched to db admin
+MongoDB Enterprise > show users
+MongoDB Enterprise >                            nota : db.createUser() es un método para crear usuarios. 
+use admin
+db.createUser(
+  {
+    user: "alice",
+    pwd: "abc123",
+    roles: [ { role: "userAdminAnyDatabase", db: "admin" } ]
+  }
+)
+
+Vamos a probar que funciona la cadena de conexión
+[root@localhost selinux]# mongo "mongodb://alice@localhost:27017/?authSource=admin"
+
+
+
+Se pueden usar opciones como  --username <user>  --password, --authenticationDatabase <db> , etc. 
+
+
+mongo --username alice --password --authenticationDatabase admin --host mongodb0.examples.com --port 28015
+
+Para los clusters se usan conexiones del tipo .... donde se conecta a los replicasets pero eso es para más adelante...
+
+
+Varios ejemplos más complejos con conexiones  a replicasets/clusters , ssl y demás...
+
+mongo "mongodb://mongodb0.example.com.local:27017,mongodb1.example.com.local:27017,mongodb2.example.com.local:27017/?replicaSet=replA"
+
+ssl ----> mongo "mongodb+srv  ...... 
+
+
+You can specify the replica set name and members from the --host <replica set name>/<host1>:<port1>,<host2>:<port2>,... command-line option. For example, to connect to replica set named replA:
+
+mongo --host replA/mongodb0.example.com.local:27017,mongodb1.example.com.local:27017,mongodb2.example.com.local:27017
+TLS/SSL Connection
+For TLS/SSL connections,
+
+You can specify the ssl=true option in the connection string.
+
+mongo "mongodb://mongodb0.example.com.local:27017,mongodb1.example.com.local:27017,mongodb2.example.com.local:27017/?replicaSet=replA&ssl=true"
+If using the DNS Seedlist Connection Format, you can include the +srv connection string modifier:
+
+mongo "mongodb+srv://server.example.com/"
+
+
+Use of the +srv connection string modifier automatically sets the ssl option to true for the connection.
+
+You can specify --ssl command-line option. For example, to connect to replica set named replA:
+
+mongo --ssl --host replA/mongodb0.example.com.local:27017,mongodb1.example.com.local:27017,mongodb2.example.com.local:27017
+
+
+Para monstrar la base de datos en la que estás comando db.
+
+[root@localhost selinux]# mongo
+
+MongoDB Enterprise > db
+test
+MongoDB Enterprise > show databases
+admin   0.000GB
+config  0.000GB
+local   0.000GB
+MongoDB Enterprise >
+
+use <database>
+MongoDB Enterprise > use admin
+switched to db admin
+MongoDB Enterprise > db
+admin
+MongoDB Enterprise >
+
+Opening New Connections
+
+
+new Mongo()
+new Mongo(<host>)
+new Mongo(<host:port>)
+
+MongoDB Enterprise > new Mongo()
+connection to 127.0.0.1:27017
+
+MongoDB Enterprise > db = connect("localhost:27017/myNewDatabase");
+
+
+
+
+
+
+

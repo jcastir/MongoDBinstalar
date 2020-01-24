@@ -1,0 +1,334 @@
+db.collection.deleteOne()
+db.collection.deleteMany()
+db.collection.drop()
+
+db.collection.deleteOne()
+Removes a single document from a collection.
+
+db.collection.deleteOne(
+   <filter>,
+   {
+      writeConcern: <document>,
+      collation: <document>
+   }
+)
+Parameter	Type	Description
+filter	document	
+Specifies deletion criteria using query operators.
+
+Specify an empty document { } to delete the first document returned in the collection.
+
+writeConcern	document	
+Optional. A document expressing the write concern. Omit to use the default write concern.
+
+Do not explicitly set the write concern for the operation if run in a transaction. To use write concern with transactions, see Transactions and Write Concern.
+
+collation	document	
+Optional.
+
+Specifies the collation to use for the operation.
+
+Collation allows users to specify language-specific rules for string comparison, such as rules for lettercase and accent marks.
+
+The collation option has the following syntax:
+
+collation: {
+   locale: <string>,
+   caseLevel: <boolean>,
+   caseFirst: <string>,
+   strength: <int>,
+   numericOrdering: <boolean>,
+   alternate: <string>,
+   maxVariable: <string>,
+   backwards: <boolean>
+}
+When specifying collation, the locale field is mandatory; all other collation fields are optional. For descriptions of the fields, see Collation Document.
+
+If the collation is unspecified but the collection has a default collation (see db.createCollection()), the operation uses the collation specified for the collection.
+
+If no collation is specified for the collection or for the operations, MongoDB uses the simple binary comparison used in prior versions for string comparisons.
+
+You cannot specify multiple collations for an operation. For example, you cannot specify different collations per field, or if performing a find with a sort, you cannot use one collation for the find and another for the sort.
+
+New in version 3.4.
+
+Returns:	A document containing:
+A boolean acknowledged as true if the operation ran with write concern or false if write concern was disabled
+deletedCount containing the number of deleted documents
+Behavior
+Deletion Order
+db.collection.deleteOne deletes the first document that matches the filter. Use a field that is part of a unique index such as _id for precise deletions.
+
+Capped Collections
+db.collection.deleteOne() throws a WriteError exception if used on a capped collection. To remove documents from a capped collection, use db.collection.drop() instead.
+
+Transactions
+db.collection.deleteOne() supports multi-document transactions.
+
+Do not explicitly set the write concern for the operation if run in a transaction. To use write concern with transactions, see Transactions and Write Concern.
+
+IMPORTANT
+
+In most cases, multi-document transaction incurs a greater performance cost over single document writes, and the availability of multi-document transactions should not be a replacement for effective schema design. For many scenarios, the denormalized data model (embedded documents and arrays) will continue to be optimal for your data and use cases. That is, for many scenarios, modeling your data appropriately will minimize the need for multi-document transactions.
+
+For additional transactions usage considerations (such as runtime limit and oplog size limit), see also Production Considerations.
+
+Examples
+Delete a Single Document
+The orders collection has documents with the following structure:
+
+{
+   _id: ObjectId("563237a41a4d68582c2509da"),
+   stock: "Brent Crude Futures",
+   qty: 250,
+   type: "buy-limit",
+   limit: 48.90,
+   creationts: ISODate("2015-11-01T12:30:15Z"),
+   expiryts: ISODate("2015-11-01T12:35:15Z"),
+   client: "Crude Traders Inc."
+}
+The following operation deletes the order with _id: ObjectId("563237a41a4d68582c2509da") :
+
+try {
+   db.orders.deleteOne( { "_id" : ObjectId("563237a41a4d68582c2509da") } );
+} catch (e) {
+   print(e);
+}
+The operation returns:
+
+{ "acknowledged" : true, "deletedCount" : 1 }
+The following operation deletes the first document with expiryts greater than ISODate("2015-11-01T12:40:15Z")
+
+try {
+   db.orders.deleteOne( { "expiryts" : { $lt: ISODate("2015-11-01T12:40:15Z") } } );
+} catch (e) {
+   print(e);
+}
+The operation returns:
+
+{ "acknowledged" : true, "deletedCount" : 1 }
+deleteOne() with Write Concern
+Given a three member replica set, the following operation specifies a w of majority, wtimeout of 100:
+
+try {
+   db.orders.deleteOne(
+       { "_id" : ObjectId("563237a41a4d68582c2509da") },
+       { w : "majority", wtimeout : 100 }
+   );
+} catch (e) {
+   print (e);
+}
+If the acknowledgement takes longer than the wtimeout limit, the following exception is thrown:
+
+WriteConcernError({
+   "code" : 64,
+   "errInfo" : {
+      "wtimeout" : true
+   },
+   "errmsg" : "waiting for replication timed out"
+})
+Specify Collation
+New in version 3.4.
+
+Collation allows users to specify language-specific rules for string comparison, such as rules for lettercase and accent marks.
+
+A collection myColl has the following documents:
+
+{ _id: 1, category: "café", status: "A" }
+{ _id: 2, category: "cafe", status: "a" }
+{ _id: 3, category: "cafE", status: "a" }
+The following operation includes the collation option:
+
+db.myColl.deleteOne(
+   { category: "cafe", status: "A" },
+   { collation: { locale: "fr", strength: 1 } }
+)
+
+
+db.collection.deleteMany()
+Removes all documents that match the filter from a collection.
+
+db.collection.deleteMany(
+   <filter>,
+   {
+      writeConcern: <document>,
+      collation: <document>
+   }
+)
+Parameter	Type	Description
+filter	document	
+Specifies deletion criteria using query operators.
+
+To delete all documents in a collection, pass in an empty document ({ }).
+
+writeConcern	document	
+Optional. A document expressing the write concern. Omit to use the default write concern.
+
+Do not explicitly set the write concern for the operation if run in a transaction. To use write concern with transactions, see Transactions and Write Concern.
+
+collation	document	
+Optional.
+
+Specifies the collation to use for the operation.
+
+Collation allows users to specify language-specific rules for string comparison, such as rules for lettercase and accent marks.
+
+The collation option has the following syntax:
+
+collation: {
+   locale: <string>,
+   caseLevel: <boolean>,
+   caseFirst: <string>,
+   strength: <int>,
+   numericOrdering: <boolean>,
+   alternate: <string>,
+   maxVariable: <string>,
+   backwards: <boolean>
+}
+When specifying collation, the locale field is mandatory; all other collation fields are optional. For descriptions of the fields, see Collation Document.
+
+If the collation is unspecified but the collection has a default collation (see db.createCollection()), the operation uses the collation specified for the collection.
+
+If no collation is specified for the collection or for the operations, MongoDB uses the simple binary comparison used in prior versions for string comparisons.
+
+You cannot specify multiple collations for an operation. For example, you cannot specify different collations per field, or if performing a find with a sort, you cannot use one collation for the find and another for the sort.
+
+New in version 3.4.
+
+Returns:	A document containing:
+A boolean acknowledged as true if the operation ran with write concern or false if write concern was disabled
+deletedCount containing the number of deleted documents
+Behavior
+Capped Collections
+db.collection.deleteMany() throws a WriteError exception if used on a capped collection. To remove all documents from a capped collection, use db.collection.drop() instead.
+
+Delete a Single Document
+To delete a single document, use db.collection.deleteOne() instead.
+
+Alternatively, use a field that is a part of a unique index such as _id.
+
+Transactions
+db.collection.deleteMany() supports multi-document transactions.
+
+Do not explicitly set the write concern for the operation if run in a transaction. To use write concern with transactions, see Transactions and Write Concern.
+
+IMPORTANT
+
+In most cases, multi-document transaction incurs a greater performance cost over single document writes, and the availability of multi-document transactions should not be a replacement for effective schema design. For many scenarios, the denormalized data model (embedded documents and arrays) will continue to be optimal for your data and use cases. That is, for many scenarios, modeling your data appropriately will minimize the need for multi-document transactions.
+
+For additional transactions usage considerations (such as runtime limit and oplog size limit), see also Production Considerations.
+
+Examples
+Delete Multiple Documents
+The orders collection has documents with the following structure:
+
+{
+   _id: ObjectId("563237a41a4d68582c2509da"),
+   stock: "Brent Crude Futures",
+   qty: 250,
+   type: "buy-limit",
+   limit: 48.90,
+   creationts: ISODate("2015-11-01T12:30:15Z"),
+   expiryts: ISODate("2015-11-01T12:35:15Z"),
+   client: "Crude Traders Inc."
+}
+The following operation deletes all documents where client : "Crude Traders Inc.":
+
+try {
+   db.orders.deleteMany( { "client" : "Crude Traders Inc." } );
+} catch (e) {
+   print (e);
+}
+The operation returns:
+
+{ "acknowledged" : true, "deletedCount" : 10 }
+The following operation deletes all documents where stock : "Brent Crude Futures" and limit is greater than 48.88:
+
+try {
+   db.orders.deleteMany( { "stock" : "Brent Crude Futures", "limit" : { $gt : 48.88 } } );
+} catch (e) {
+   print (e);
+}
+The operation returns:
+
+{ "acknowledged" : true, "deletedCount" : 8 }
+deleteMany() with Write Concern
+Given a three member replica set, the following operation specifies a w of majority and wtimeout of 100:
+
+try {
+   db.orders.deleteMany(
+       { "client" : "Crude Traders Inc." },
+       { w : "majority", wtimeout : 100 }
+   );
+} catch (e) {
+   print (e);
+}
+If the acknowledgement takes longer than the wtimeout limit, the following exception is thrown:
+
+WriteConcernError({
+   "code" : 64,
+   "errInfo" : {
+      "wtimeout" : true
+   },
+   "errmsg" : "waiting for replication timed out"
+})
+Specify Collation
+New in version 3.4.
+
+Collation allows users to specify language-specific rules for string comparison, such as rules for lettercase and accent marks.
+
+A collection myColl has the following documents:
+
+{ _id: 1, category: "café", status: "A" }
+{ _id: 2, category: "cafe", status: "a" }
+{ _id: 3, category: "cafE", status: "a" }
+The following operation includes the collation option:
+
+db.myColl.deleteMany(
+   { category: "cafe", status: "A" },
+   { collation: { locale: "fr", strength: 1 } }
+)
+
+
+db.collection.drop(<options>)
+Removes a collection or view from the database. The method also removes any indexes associated with the dropped collection. The method provides a wrapper around the drop command.
+
+db.collection.drop() has the form:
+
+Changed in version 4.0: db.collection.drop() accepts an options document.
+
+db.collection.drop( { writeConcern: <document> } )
+db.collection.drop() takes an optional document with the following field:
+
+Field	Description
+writeConcern	
+Optional. A document expressing the write concern of the db.collection.drop() operation. Omit to use the default write concern.
+
+When issued on a sharded cluster, mongos converts the write concern of the drop command and its helper db.collection.drop() to "majority".
+
+New in version 4.0.
+
+Returns:	
+true when successfully drops a collection.
+false when collection to drop does not exist.
+Behavior
+The db.collection.drop() method and drop command create an invalidate Event for any Change Streams opened on dropped collection.
+Starting in MongoDB 4.0.2, dropping a collection deletes its associated zone/tag ranges.
+Resource Locking
+Changed in version 4.2.
+
+db.collection.drop() obtains an exclusive lock on the specified collection for the duration of the operation. All subsequent operations on the collection must wait until db.collection.drop() releases the lock.
+
+Prior to MongoDB 4.2, db.collection.drop() obtained an exclusive lock on the parent database, blocking all operations on the database and all its collections until the operation completed.
+
+Example
+Drop a Collection Using Default Write Concern
+The following operation drops the students collection in the current database.
+
+db.students.drop()
+Drop a Collection Using w: "majority" Write Concern
+Changed in version 4.0: db.collection.drop() accepts an options document.
+
+The following operation drops the students collection in the current database. The operation uses the "majority" write concern:
+
+db.students.drop( { writeConcern: { w: "majority" } } )

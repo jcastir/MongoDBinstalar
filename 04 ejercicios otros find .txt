@@ -1,0 +1,944 @@
+db.collection.findOne(query, projection)
+
+Returns one document that satisfies the specified query criteria on the collection or view. If multiple documents satisfy the query, this method returns the first document according to the natural order which reflects the order of documents on the disk. In capped collections, natural order is the same as insertion order. If no document satisfies the query, the method returns null.
+
+Parameter	Type	Description
+query	document	Optional. Specifies query selection criteria using query operators.
+projection	document	Optional. Specifies the fields to return using projection operators. Omit this parameter to return all fields in the matching document.
+The projection parameter takes a document of the following form:
+
+{ field1: <boolean>, field2: <boolean> ... }
+The <boolean> can be one of the following include or exclude values:
+
+1 or true to include. The findOne() method always includes the _id field even if the field is not explicitly specified in the projection parameter.
+0 or false to exclude.
+The projection argument cannot mix include and exclude specifications, with the exception of excluding the _id field.
+
+Returns:	One document that satisfies the criteria specified as the first argument to this method. If you specify a projection parameter, findOne() returns a document that only contains the projection fields. The _id field is always included unless you explicitly exclude it.
+Although similar to the find() method, the findOne() method returns a document rather than a cursor.
+
+Behavior
+Client Disconnection
+Starting in MongoDB 4.2, if the client that issued the db.collection.findOne() disconnects before the operation completes, MongoDB marks the db.collection.findOne() for termination (i.e. killOp on the operation).
+
+Examples
+With Empty Query Specification
+The following operation returns a single document from the bios collection:
+
+db.bios.findOne()
+With a Query Specification
+The following operation returns the first matching document from the bios collection where either the field first in the embedded document name starts with the letter G or where the field birth is less than new Date('01/01/1945'):
+
+db.bios.findOne(
+   {
+     $or: [
+            { 'name.first' : /^G/ },
+            { birth: { $lt: new Date('01/01/1945') } }
+          ]
+   }
+)
+With a Projection
+The projection parameter specifies which fields to return. The parameter contains either include or exclude specifications, not both, unless the exclude is for the _id field.
+
+Specify the Fields to Return
+The following operation finds a document in the bios collection and returns only the name, contribs and _id fields:
+
+db.bios.findOne(
+    { },
+    { name: 1, contribs: 1 }
+)
+Return All but the Excluded Fields
+The following operation returns a document in the bios collection where the contribs field contains the element OOP and returns all fields except the _id field, the first field in the name embedded document, and the birth field:
+
+db.bios.findOne(
+   { contribs: 'OOP' },
+   { _id: 0, 'name.first': 0, birth: 0 }
+)
+The findOne Result Document
+You cannot apply cursor methods to the result of findOne() because a single document is returned. You have access to the document directly:
+
+var myDocument = db.bios.findOne();
+
+if (myDocument) {
+   var myName = myDocument.name;
+
+   print (tojson(myName));
+}
+
+
+
+db.collection.findOneAndDelete()
+
+Definition
+db.collection.findOneAndDelete(filter, options)
+New in version 3.2.
+
+Deletes a single document based on the filter and sort criteria, returning the deleted document.
+
+The findOneAndDelete() method has the following form:
+
+db.collection.findOneAndDelete(
+   <filter>,
+   {
+     projection: <document>,
+     sort: <document>,
+     maxTimeMS: <number>,
+     collation: <document>
+   }
+)
+The findOneAndDelete() method takes the following parameters:
+
+Parameter	Type	Description
+filter	document	
+The selection criteria for the update. The same query selectors as in the find() method are available.
+
+Specify an empty document { } to delete the first document returned in the collection.
+
+If unspecified, defaults to an empty document.
+
+Starting in MongoDB 4.2 (and 4.0.12+, 3.6.14+, and 3.4.23+), the operation errors if the query argument is not a document.
+
+projection	document	
+Optional. A subset of fields to return.
+
+To return all fields in the returned document, omit this parameter.
+
+Starting in MongoDB 4.2 (and 4.0.12+, 3.6.14+, and 3.4.23+), the operation errors if the projection argument is not a document.
+
+sort	document	
+Optional. Specifies a sorting order for the documents matched by the filter.
+
+Starting in MongoDB 4.2 (and 4.0.12+, 3.6.14+, and 3.4.23+), the operation errors if the sort argument is not a document.
+
+See cursor.sort().
+
+maxTimeMS	number	Optional. Specifies a time limit in milliseconds within which the operation must complete within. Throws an error if the limit is exceeded.
+collation	document	
+Optional.
+
+Specifies the collation to use for the operation.
+
+Collation allows users to specify language-specific rules for string comparison, such as rules for lettercase and accent marks.
+
+The collation option has the following syntax:
+
+collation: {
+   locale: <string>,
+   caseLevel: <boolean>,
+   caseFirst: <string>,
+   strength: <int>,
+   numericOrdering: <boolean>,
+   alternate: <string>,
+   maxVariable: <string>,
+   backwards: <boolean>
+}
+When specifying collation, the locale field is mandatory; all other collation fields are optional. For descriptions of the fields, see Collation Document.
+
+If the collation is unspecified but the collection has a default collation (see db.createCollection()), the operation uses the collation specified for the collection.
+
+If no collation is specified for the collection or for the operations, MongoDB uses the simple binary comparison used in prior versions for string comparisons.
+
+You cannot specify multiple collations for an operation. For example, you cannot specify different collations per field, or if performing a find with a sort, you cannot use one collation for the find and another for the sort.
+
+New in version 3.4.
+
+Returns:	Returns the deleted document.
+Behavior
+Document Match
+findOneAndDelete() deletes the first matching document in the collection that matches the filter. The sort parameter can be used to influence which document is updated.
+
+Projection
+The projection parameter takes a document in the following form:
+
+{ field1 : < boolean >, field2 : < boolean> ... }
+The <boolean> value can be any of the following:
+
+1 or true to include the field. The method returns the _id field even if it is not explicitly stated in the projection parameter.
+0 or false to exclude the field. This can be used on any field, including _id.
+Transactions
+db.collection.findOneAndDelete() supports multi-document transactions.
+
+Do not explicitly set the write concern for the operation if run in a transaction. To use write concern with transactions, see Transactions and Write Concern.
+
+IMPORTANT
+
+In most cases, multi-document transaction incurs a greater performance cost over single document writes, and the availability of multi-document transactions should not be a replacement for effective schema design. For many scenarios, the denormalized data model (embedded documents and arrays) will continue to be optimal for your data and use cases. That is, for many scenarios, modeling your data appropriately will minimize the need for multi-document transactions.
+
+For additional transactions usage considerations (such as runtime limit and oplog size limit), see also Production Considerations.
+
+Examples
+Delete A Document
+The scores collection contains documents similar to the following:
+
+{ _id: 6305, name : "A. MacDyver", "assignment" : 5, "points" : 24 },
+{ _id: 6308, name : "B. Batlock", "assignment" : 3, "points" : 22 },
+{ _id: 6312, name : "M. Tagnum", "assignment" : 5, "points" : 30 },
+{ _id: 6319, name : "R. Stiles", "assignment" : 2, "points" : 12 },
+{ _id: 6322, name : "A. MacDyver", "assignment" : 2, "points" : 14 },
+{ _id: 6234, name : "R. Stiles", "assignment" : 1, "points" : 10 }
+The following operation finds the first document where name : M. Tagnum and deletes it:
+
+db.scores.findOneAndDelete(
+   { "name" : "M. Tagnum" }
+)
+The operation returns the original document that has been deleted:
+
+{ _id: 6312, name: "M. Tagnum", "assignment" : 5, "points" : 30 }
+Sort And Delete A Document
+The scores collection contains documents similar to the following:
+
+{ _id: 6305, name : "A. MacDyver", "assignment" : 5, "points" : 24 },
+{ _id: 6308, name : "B. Batlock", "assignment" : 3, "points" : 22 },
+{ _id: 6312, name : "M. Tagnum", "assignment" : 5, "points" : 30 },
+{ _id: 6319, name : "R. Stiles", "assignment" : 2, "points" : 12 },
+{ _id: 6322, name : "A. MacDyver", "assignment" : 2, "points" : 14 },
+{ _id: 6234, name : "R. Stiles", "assignment" : 1, "points" : 10 }
+The following operation first finds all documents where name : "A. MacDyver". It then sorts by points ascending before deleting the document with the lowest points value:
+
+db.scores.findOneAndDelete(
+   { "name" : "A. MacDyver" },
+   { sort : { "points" : 1 } }
+)
+The operation returns the original document that has been deleted:
+
+{ _id: 6322, name: "A. MacDyver", "assignment" : 2, "points" : 14 }
+Projecting the Deleted Document
+The following operation uses projection to only return the _id and assignment fields in the returned document:
+
+db.scores.findOneAndDelete(
+   { "name" : "A. MacDyver" },
+   { sort : { "points" : 1 }, projection: { "assignment" : 1 } }
+)
+The operation returns the original document with the assignment and _id fields:
+
+{ _id: 6322, "assignment" : 2 }
+Update Document with Time Limit
+The following operation sets a 5ms time limit to complete the deletion:
+
+try {
+   db.scores.findOneAndDelete(
+      { "name" : "A. MacDyver" },
+      { sort : { "points" : 1 }, maxTimeMS : 5 };
+   );
+}
+catch(e){
+   print(e);
+}
+If the operation exceeds the time limit, it returns:
+
+Error: findAndModifyFailed failed: { "ok" : 0, "errmsg" : "operation exceeded time limit", "code" : 50 }
+Specify Collation
+New in version 3.4.
+
+Collation allows users to specify language-specific rules for string comparison, such as rules for lettercase and accent marks.
+
+A collection myColl has the following documents:
+
+{ _id: 1, category: "café", status: "A" }
+{ _id: 2, category: "cafe", status: "a" }
+{ _id: 3, category: "cafE", status: "a" }
+The following operation includes the collation option:
+
+db.myColl.findOneAndDelete(
+   { category: "cafe", status: "a" },
+   { collation: { locale: "fr", strength: 1 } }
+);
+The operation returns the following document:
+
+{ "_id" : 1, "category" : "café", "status" : "A" }
+
+
+
+db.collection.findOneAndReplace()
+On this page
+
+Definition
+Behavior
+Definition
+db.collection.findOneAndReplace(filter, replacement, options)
+New in version 3.2.
+
+Modifies and replaces a single document based on the filter and sort criteria.
+
+The findOneAndReplace() method has the following form:
+
+db.collection.findOneAndReplace(
+   <filter>,
+   <replacement>,
+   {
+     projection: <document>,
+     sort: <document>,
+     maxTimeMS: <number>,
+     upsert: <boolean>,
+     returnNewDocument: <boolean>,
+     collation: <document>
+   }
+)
+The findOneAndReplace() method takes the following parameters:
+
+Parameter	Type	Description
+filter	document	
+The selection criteria for the update. The same query selectors as in the find() method are available.
+
+Specify an empty document { } to replace the first document returned in the collection.
+
+If unspecified, defaults to an empty document.
+
+Starting in MongoDB 4.2 (and 4.0.12+, 3.6.14+, and 3.4.23+), the operation errors if the query argument is not a document.
+
+replacement	document	
+The replacement document.
+
+Cannot contain update operators.
+
+The <replacement> document cannot specify an _id value that differs from the replaced document.
+
+projection	document	
+Optional. A subset of fields to return.
+
+To return all fields in the matching document, omit this parameter.
+
+Starting in MongoDB 4.2 (and 4.0.12+, 3.6.14+, and 3.4.23+), the operation errors if the projection argument is not a document.
+
+sort	document	
+Optional. Specifies a sorting order for the documents matched by the filter.
+
+Starting in MongoDB 4.2 (and 4.0.12+, 3.6.14+, and 3.4.23+), the operation errors if the sort argument is not a document.
+
+See cursor.sort().
+
+maxTimeMS	number	Optional. Specifies a time limit in milliseconds within which the operation must complete within. Throws an error if the limit is exceeded.
+upsert	boolean	
+Optional. When true, findOneAndReplace() either:
+
+Inserts the document from the replacement parameter if no document matches the filter. Returns null after inserting the new document, unless returnNewDocument is true.
+Replaces the document that matches the filter with the replacement document.
+MongoDB will add the _id field to the replacement document if it is not specified in either the filter or replacement documents. If _id is present in both, the values must be equal.
+
+To avoid multiple upserts, ensure that the query fields are uniquely indexed.
+
+Defaults to false.
+
+returnNewDocument	boolean	
+Optional. When true, returns the replacement document instead of the original document.
+
+Defaults to false.
+
+collation	document	
+Optional.
+
+Specifies the collation to use for the operation.
+
+Collation allows users to specify language-specific rules for string comparison, such as rules for lettercase and accent marks.
+
+The collation option has the following syntax:
+
+collation: {
+   locale: <string>,
+   caseLevel: <boolean>,
+   caseFirst: <string>,
+   strength: <int>,
+   numericOrdering: <boolean>,
+   alternate: <string>,
+   maxVariable: <string>,
+   backwards: <boolean>
+}
+When specifying collation, the locale field is mandatory; all other collation fields are optional. For descriptions of the fields, see Collation Document.
+
+If the collation is unspecified but the collection has a default collation (see db.createCollection()), the operation uses the collation specified for the collection.
+
+If no collation is specified for the collection or for the operations, MongoDB uses the simple binary comparison used in prior versions for string comparisons.
+
+You cannot specify multiple collations for an operation. For example, you cannot specify different collations per field, or if performing a find with a sort, you cannot use one collation for the find and another for the sort.
+
+New in version 3.4.
+
+Returns:	Returns either the original document or, if returnNewDocument: true, the replacement document.
+Behavior
+Document Match
+db.collection.findOneAndReplace() replaces the first matching document in the collection that matches the filter. The sort parameter can be used to influence which document is modified.
+
+Projection
+The projection parameter takes a document in the following form:
+
+{ field1 : < boolean >, field2 : < boolean> ... }
+The <boolean> value can be any of the following:
+
+1 or true to include the field. The method returns the _id field even if it is not explicitly stated in the projection parameter.
+0 or false to exclude the field. This can be used on any field, including _id.
+Sharded Collections
+To use db.collection.findOneAndReplace() on a sharded collection, the query filter must include an equality condition on the shard key.
+
+Shard Key Modification
+Starting in MongoDB 4.2, you can update a document’s shard key value unless the shard key field is the immutable _id field. For details on updating the shard key, see Change a Document’s Shard Key Value.
+
+Before MongoDB 4.2, a document’s shard key field value is immutable.
+
+Transactions
+db.collection.findOneAndReplace() supports multi-document transactions.
+
+If the operation results in an upsert, the collection must already exist.
+
+Do not explicitly set the write concern for the operation if run in a transaction. To use write concern with transactions, see Transactions and Write Concern.
+
+IMPORTANT
+
+In most cases, multi-document transaction incurs a greater performance cost over single document writes, and the availability of multi-document transactions should not be a replacement for effective schema design. For many scenarios, the denormalized data model (embedded documents and arrays) will continue to be optimal for your data and use cases. That is, for many scenarios, modeling your data appropriately will minimize the need for multi-document transactions.
+
+For additional transactions usage considerations (such as runtime limit and oplog size limit), see also Production Considerations.
+
+Examples
+Replace A Document
+The scores collection contains documents similar to the following:
+
+{ "_id" : 1521, "team" : "Fearful Mallards", "score" : 25000 },
+{ "_id" : 2231, "team" : "Tactful Mooses", "score" : 23500 },
+{ "_id" : 4511, "team" : "Aquatic Ponies", "score" : 19250 },
+{ "_id" : 5331, "team" : "Cuddly Zebras", "score" : 15235 },
+{ "_id" : 3412, "team" : "Garrulous Bears", "score" : 22300 }
+The following operation finds the first document with score less than 20000 and replaces it:
+
+db.scores.findOneAndReplace(
+   { "score" : { $lt : 20000 } },
+   { "team" : "Observant Badgers", "score" : 20000 }
+)
+The operation returns the original document that has been replaced:
+
+{ "_id" : 2512, "team" : "Aquatic Ponies", "score" : 19250 }
+If returnNewDocument was true, the operation would return the replacement document instead.
+
+Sort and Replace A Document
+The scores collection contains documents similar to the following:
+
+{ "_id" : 1521, "team" : "Fearful Mallards", "score" : 25000 },
+{ "_id" : 2231, "team" : "Tactful Mooses", "score" : 23500 },
+{ "_id" : 4511, "team" : "Aquatic Ponies", "score" : 19250 },
+{ "_id" : 5331, "team" : "Cuddly Zebras", "score" : 15235 },
+{ "_id" : 3412, "team" : "Garrulous Bears", "score" : 22300 }
+Sorting by score changes the result of the operation. The following operation sorts the result of the filter by score ascending, and replaces the lowest scoring document:
+
+db.scores.findOneAndReplace(
+   { "score" : { $lt : 20000 } },
+   { "team" : "Observant Badgers", "score" : 20000 },
+   { sort: { "score" : 1 } }
+)
+The operation returns the original document that has been replaced:
+
+{ "_id" : 5112, "team" : "Cuddly Zebras", "score" : 15235 }
+See Replace A Document for the non-sorted result of this command.
+
+Project the Returned Document
+The scores collection contains documents similar to the following:
+
+{ "_id" : 1521, "team" : "Fearful Mallards", "score" : 25000 },
+{ "_id" : 2231, "team" : "Tactful Mooses", "score" : 23500 },
+{ "_id" : 4511, "team" : "Aquatic Ponies", "score" : 19250 },
+{ "_id" : 5331, "team" : "Cuddly Zebras", "score" : 15235 },
+{ "_id" : 3412, "team" : "Garrulous Bears", "score" : 22300 }
+The following operation uses projection to only display the team field in the returned document:
+
+db.scores.findOneAndReplace(
+   { "score" : { $lt : 22250 } },
+   { "team" : "Therapeutic Hamsters", "score" : 22250 },
+   { sort : { "score" : 1 }, project: { "_id" : 0, "team" : 1 } }
+)
+The operation returns the original document with only the team field:
+
+{ "team" : "Aquatic Ponies"}
+Replace Document with Time Limit
+The following operation sets a 5ms time limit to complete:
+
+try {
+   db.scores.findOneAndReplace(
+      { "score" : { $gt : 25000 } },
+      { "team" : "Emphatic Rhinos", "score" : 25010 },
+      { maxTimeMS: 5 }
+   );
+}
+catch(e){
+   print(e);
+}
+If the operation exceeds the time limit, it returns:
+
+Error: findAndModifyFailed failed: { "ok" : 0, "errmsg" : "operation exceeded time limit", "code" : 50 }
+Replace Document with Upsert
+The following operation uses the upsert field to insert the replacement document if nothing matches the filter:
+
+try {
+   db.scores.findOneAndReplace(
+      { "team" : "Fortified Lobsters" },
+      { "_id" : 6019, "team" : "Fortified Lobsters" , "score" : 32000},
+      { upsert : true, returnNewDocument: true }
+   );
+}
+catch (e){
+   print(e);
+}
+The operation returns the following:
+
+{
+     "_id" : 6019,
+     "team" : "Fortified Lobsters",
+     "score" : 32000
+}
+If returnNewDocument was false, the operation would return null as there is no original document to return.
+
+Specify Collation
+New in version 3.4.
+
+Collation allows users to specify language-specific rules for string comparison, such as rules for lettercase and accent marks.
+
+A collection myColl has the following documents:
+
+{ _id: 1, category: "café", status: "A" }
+{ _id: 2, category: "cafe", status: "a" }
+{ _id: 3, category: "cafE", status: "a" }
+The following operation includes the collation option:
+
+db.myColl.findOneAndReplace(
+   { category: "cafe", status: "a" },
+   { category: "cafÉ", status: "Replaced" },
+   { collation: { locale: "fr", strength: 1 } }
+);
+The operation returns the following document:
+
+{ "_id" : 1, "category" : "café", "status" : "A" }
+
+db.collection.findOneAndUpdate()
+On this page
+
+Definition
+Behavior
+Examples
+Definition
+db.collection.findOneAndUpdate(filter, update, options)
+New in version 3.2.
+
+Updates a single document based on the filter and sort criteria.
+
+The findOneAndUpdate() method has the following form:
+
+db.collection.findOneAndUpdate(
+   <filter>,
+   <update document or aggregation pipeline>, // Changed in MongoDB 4.2
+   {
+     projection: <document>,
+     sort: <document>,
+     maxTimeMS: <number>,
+     upsert: <boolean>,
+     returnNewDocument: <boolean>,
+     collation: <document>,
+     arrayFilters: [ <filterdocument1>, ... ]
+   }
+)
+The findOneAndUpdate() method takes the following parameters:
+
+Parameter	Type	Description
+filter	document	
+The selection criteria for the update. The same query selectors as in the find() method are available.
+
+Specify an empty document { } to update the first document returned in the collection.
+
+If unspecified, defaults to an empty document.
+
+Starting in MongoDB 4.2 (and 4.0.12+, 3.6.14+, and 3.4.23+), the operation errors if the query argument is not a document.
+
+update	document or array	
+The update document or, starting in MongoDB 4.2, an aggregation pipeline.
+
+If passed a document with update operator expressions, db.collection.findOneAndUpdate() performs the specified modification.
+
+NOTE
+
+The document must contain only update operator expressions. You cannot specify a replacement document { <field1>: <value1>, ...}. To use a replacement document, see db.collection.findOneAndReplace() instead.
+
+Starting in MongoDB 4.2, if passed an aggregation pipeline [ <stage1>, <stage2>, ... ], db.collection.findOneAndUpdate() modifies the document per the pipeline. The pipeline can consist of the following stages:
+
+$addFields and its alias $set
+$project and its alias $unset
+$replaceRoot and its alias $replaceWith.
+projection	document	
+Optional. A subset of fields to return.
+
+To return all fields in the returned document, omit this parameter.
+
+Starting in MongoDB 4.2 (and 4.0.12+, 3.6.14+, and 3.4.23+), the operation errors if the projection argument is not a document.
+
+sort	document	
+Optional. Specifies a sorting order for the documents matched by the filter.
+
+Starting in MongoDB 4.2 (and 4.0.12+, 3.6.14+, and 3.4.23+), the operation errors if the sort argument is not a document.
+
+See cursor.sort().
+
+maxTimeMS	number	Optional. Specifies a time limit in milliseconds within which the operation must complete within. Throws an error if the limit is exceeded.
+upsert	boolean	
+Optional. When true, findOneAndUpdate() either:
+
+Creates a new document if no documents match the filter. For more details see upsert behavior. Returns null after inserting the new document, unless returnNewDocument is true.
+Updates a single document that matches the filter.
+To avoid multiple upserts, ensure that the filter fields are uniquely indexed.
+
+Defaults to false.
+
+returnNewDocument	boolean	
+Optional. When true, returns the updated document instead of the original document.
+
+Defaults to false.
+
+collation	document	
+Optional.
+
+Specifies the collation to use for the operation.
+
+Collation allows users to specify language-specific rules for string comparison, such as rules for lettercase and accent marks.
+
+The collation option has the following syntax:
+
+collation: {
+   locale: <string>,
+   caseLevel: <boolean>,
+   caseFirst: <string>,
+   strength: <int>,
+   numericOrdering: <boolean>,
+   alternate: <string>,
+   maxVariable: <string>,
+   backwards: <boolean>
+}
+When specifying collation, the locale field is mandatory; all other collation fields are optional. For descriptions of the fields, see Collation Document.
+
+If the collation is unspecified but the collection has a default collation (see db.createCollection()), the operation uses the collation specified for the collection.
+
+If no collation is specified for the collection or for the operations, MongoDB uses the simple binary comparison used in prior versions for string comparisons.
+
+You cannot specify multiple collations for an operation. For example, you cannot specify different collations per field, or if performing a find with a sort, you cannot use one collation for the find and another for the sort.
+
+New in version 3.4.
+
+arrayFilters	array	
+Optional. An array of filter documents that determine which array elements to modify for an update operation on an array field.
+
+In the update document, use the $[<identifier>] filtered positional operator to define an identifier, which you then reference in the array filter documents. You cannot have an array filter document for an identifier if the identifier is not included in the update document.
+
+NOTE
+
+The <identifier> must begin with a lowercase letter and contain only alphanumeric characters.
+
+You can include the same identifier multiple times in the update document; however, for each distinct identifier ($[identifier]) in the update document, you must specify exactly one corresponding array filter document. That is, you cannot specify multiple array filter documents for the same identifier. For example, if the update statement includes the identifier x (possibly multiple times), you cannot specify the following for arrayFilters that includes 2 separate filter documents for x:
+
+[
+  { "x.a": { $gt: 85 } },
+  { "x.b": { $gt: 80 } }
+]
+However, you can specify compound conditions on the same identifier in a single filter document, such as in the following examples:
+
+[
+  { $or: [{"x.a": {$gt: 85}}, {"x.b": {$gt: 80}}] }
+]
+
+[
+  { $and: [{"x.a": {$gt: 85}}, {"x.b": {$gt: 80}}] }
+]
+
+[
+  { "x.a": { $gt: 85 }, "x.b": { $gt: 80 } }
+]
+For examples, see Array Update Operations with arrayFilters.
+
+NOTE
+
+arrayFilters is not available for updates that use an aggregation pipeline.
+
+New in version 3.6.
+
+Returns:	Returns either the original document or, if returnNewDocument: true, the updated document.
+Behavior
+Document Match
+db.collection.findOneAndUpdate() updates the first matching document in the collection that matches the filter. The sort parameter can be used to influence which document is updated.
+
+Projection
+The projection parameter takes a document in the following form:
+
+{ field1 : < boolean >, field2 : < boolean> ... }
+The <boolean> value can be any of the following:
+
+1 or true to include the field. The method returns the _id field even if it is not explicitly stated in the projection parameter.
+0 or false to exclude the field. This can be used on any field, including _id.
+Sharded Collections
+To use db.collection.findOneAndUpdate() on a sharded collection, the query filter must include an equality condition on the shard key.
+
+Shard Key Modification
+Starting in MongoDB 4.2, you can update a document’s shard key value unless the shard key field is the immutable _id field. For details on updating the shard key, see Change a Document’s Shard Key Value.
+
+Before MongoDB 4.2, a document’s shard key field value is immutable.
+
+To use db.collection.findOneAndUpdate() to update the shard key:
+
+You must run on a mongos either in a transaction or as a retryable write. Do not issue the operation directly on the shard.
+You must include an equality condition on the full shard key in the query filter. For example, if a collection messages uses { country : 1, userid : 1 } as the shard key, to update the shard key for a document, you must include country: <value>, userid: <value> in the query filter. You can include additional fields in the query as appropriate.
+Transactions
+db.collection.findOneAndUpdate() supports multi-document transactions.
+
+IMPORTANT
+
+In most cases, multi-document transaction incurs a greater performance cost over single document writes, and the availability of multi-document transactions should not be a replacement for effective schema design. For many scenarios, the denormalized data model (embedded documents and arrays) will continue to be optimal for your data and use cases. That is, for many scenarios, modeling your data appropriately will minimize the need for multi-document transactions.
+
+For additional transactions usage considerations (such as runtime limit and oplog size limit), see also Production Considerations.
+
+Existing Collections and Transactions
+Inside a transaction, you can specify read/write operations on existing collections. If the db.collection.findOneAndUpdate() results in an upsert, the collection must already exist.
+
+If the operation results in an upsert, the collection must already exist.
+
+Write Concerns and Transactions
+Do not explicitly set the write concern for the operation if run in a transaction. To use write concern with transactions, see Transactions and Write Concern.
+
+Examples
+In this section
+
+Update A Document
+Sort And Update A Document
+Project the Returned Document
+Update Document with Time Limit
+Update Document with Upsert
+Specify Collation
+Array Update Operations with arrayFilters
+Use an Aggregation Pipeline for Updates
+Update A Document
+The grades collection contains documents similar to the following:
+
+{ _id: 6305, name : "A. MacDyver", "assignment" : 5, "points" : 24 },
+{ _id: 6308, name : "B. Batlock", "assignment" : 3, "points" : 22 },
+{ _id: 6312, name : "M. Tagnum", "assignment" : 5, "points" : 30 },
+{ _id: 6319, name : "R. Stiles", "assignment" : 2, "points" : 12 },
+{ _id: 6322, name : "A. MacDyver", "assignment" : 2, "points" : 14 },
+{ _id: 6234, name : "R. Stiles", "assignment" : 1, "points" : 10 }
+The following operation finds the first document where name : R. Stiles and increments the score by 5:
+
+db.grades.findOneAndUpdate(
+   { "name" : "R. Stiles" },
+   { $inc: { "points" : 5 } }
+)
+The operation returns the original document before the update:
+
+{ _id: 6319, name: "R. Stiles", "assignment" : 2, "points" : 12 }
+If returnNewDocument was true, the operation would return the updated document instead.
+
+Sort And Update A Document
+The grades collection contains documents similar to the following:
+
+{ _id: 6305, name : "A. MacDyver", "assignment" : 5, "points" : 24 },
+{ _id: 6308, name : "B. Batlock", "assignment" : 3, "points" : 22 },
+{ _id: 6312, name : "M. Tagnum", "assignment" : 5, "points" : 30 },
+{ _id: 6319, name : "R. Stiles", "assignment" : 2, "points" : 12 },
+{ _id: 6322, name : "A. MacDyver", "assignment" : 2, "points" : 14 },
+{ _id: 6234, name : "R. Stiles", "assignment" : 1, "points" : 10 }
+The following operation updates a document where name : "A. MacDyver". The operation sorts the matching documents by points ascending to update the matching document with the least points.
+
+db.grades.findOneAndUpdate(
+   { "name" : "A. MacDyver" },
+   { $inc : { "points" : 5 } },
+   { sort : { "points" : 1 } }
+)
+The operation returns the original document before the update:
+
+{ _id: 6322, name: "A. MacDyver", "assignment" : 2, "points" : 14 }
+Project the Returned Document
+The following operation uses projection to only display the _id, points, and assignment fields in the returned document:
+
+db.grades.findOneAndUpdate(
+   { "name" : "A. MacDyver" },
+   { $inc : { "points" : 5 } },
+   { sort : { "points" : 1 }, projection: { "assignment" : 1, "points" : 1 } }
+)
+The operation returns the original document with only the fields specified in the projection document and the _id field as it was not explicitly suppressed (_id: 0) in the projection document.
+
+{ "_id" : 6322, "assignment" : 2, "points" : 14 }
+Update Document with Time Limit
+The following operation sets a 5ms time limit to complete the update:
+
+try {
+   db.grades.findOneAndUpdate(
+      { "name" : "A. MacDyver" },
+      { $inc : { "points" : 5 } },
+      { sort: { "points" : 1 }, maxTimeMS : 5 };
+   );
+}
+catch(e){
+   print(e);
+}
+If the operation exceeds the time limit, it returns:
+
+Error: findAndModifyFailed failed: { "ok" : 0, "errmsg" : "operation exceeded time limit", "code" : 50 }
+Update Document with Upsert
+The following operation uses the upsert field to insert the update document if nothing matches the filter:
+
+try {
+db.grades.findOneAndUpdate(
+   { "name" : "A.B. Abracus" },
+   { $set: { "name" : "A.B. Abracus", "assignment" : 5}, $inc : { "points" : 5 } },
+   { sort: { "points" : 1 }, upsert:true, returnNewDocument : true }
+);
+}
+catch (e){
+   print(e);
+}
+The operation returns the following:
+
+{
+   "_id" : ObjectId("5789249f1c49e39a8adc479a"),
+   "name" : "A.B. Abracus",
+   "assignment" : 5,
+   "points" : 5
+}
+If returnNewDocument was false, the operation would return null as there is no original document to return.
+
+Specify Collation
+New in version 3.4.
+
+Collation allows users to specify language-specific rules for string comparison, such as rules for lettercase and accent marks.
+
+A collection myColl has the following documents:
+
+{ _id: 1, category: "café", status: "A" }
+{ _id: 2, category: "cafe", status: "a" }
+{ _id: 3, category: "cafE", status: "a" }
+The following operation includes the collation option:
+
+db.myColl.findOneAndUpdate(
+   { category: "cafe" },
+   { $set: { status: "Updated" } },
+   { collation: { locale: "fr", strength: 1 } }
+);
+The operation returns the following document:
+
+{ "_id" : 1, "category" : "café", "status" : "A" }
+Array Update Operations with arrayFilters
+NOTE
+
+arrayFilters is not available for updates that use an aggregation pipeline.
+
+New in version 3.6.
+
+Starting in MongoDB 3.6, when updating an array field, you can specify arrayFilters that determine which array elements to update.
+
+Update Elements Match arrayFilters Criteria
+NOTE
+
+arrayFilters is not available for updates that use an aggregation pipeline.
+
+Create a collection students with the following documents:
+
+db.students.insert([
+   { "_id" : 1, "grades" : [ 95, 92, 90 ] },
+   { "_id" : 2, "grades" : [ 98, 100, 102 ] },
+   { "_id" : 3, "grades" : [ 95, 110, 100 ] }
+])
+To modify all elements that are greater than or equal to 100 in the grades array, use the filtered positional operator $[<identifier>] with the arrayFilters option in the db.collection.findOneAndUpdate method:
+
+db.students.findOneAndUpdate(
+   { grades: { $gte: 100 } },
+   { $set: { "grades.$[element]" : 100 } },
+   { arrayFilters: [ { "element": { $gte: 100 } } ] }
+)
+The operation updates the grades field for a single document, and after the operation, the collection has the following documents:
+
+{ "_id" : 1, "grades" : [ 95, 92, 90 ] }
+{ "_id" : 2, "grades" : [ 98, 100, 100 ] }
+{ "_id" : 3, "grades" : [ 95, 110, 100 ] }
+Update Specific Elements of an Array of Documents
+NOTE
+
+arrayFilters is not available for updates that use an aggregation pipeline.
+
+Create a collection students2 with the following documents:
+
+db.students2.insert([
+   {
+      "_id" : 1,
+      "grades" : [
+         { "grade" : 80, "mean" : 75, "std" : 6 },
+         { "grade" : 85, "mean" : 90, "std" : 4 },
+         { "grade" : 85, "mean" : 85, "std" : 6 }
+      ]
+   },
+   {
+      "_id" : 2,
+      "grades" : [
+         { "grade" : 90, "mean" : 75, "std" : 6 },
+         { "grade" : 87, "mean" : 90, "std" : 3 },
+         { "grade" : 85, "mean" : 85, "std" : 4 }
+      ]
+   }
+])
+The following operation finds a document where the _id field equals 1 and uses the filtered positional operator $[<identifier>] with the arrayFilters to modify the mean for all elements in the grades array where the grade is greater than or equal to 85.
+
+db.students2.findOneAndUpdate(
+   { _id : 1 },
+   { $set: { "grades.$[elem].mean" : 100 } },
+   { arrayFilters: [ { "elem.grade": { $gte: 85 } } ] }
+)
+The operation updates the grades field for a single document, and after the operation, the collection has the following documents:
+
+{
+   "_id" : 1,
+   "grades" : [
+      { "grade" : 80, "mean" : 75, "std" : 6 },
+      { "grade" : 85, "mean" : 100, "std" : 4 },
+      { "grade" : 85, "mean" : 100, "std" : 6 }
+    ]
+}
+{
+   "_id" : 2,
+   "grades" : [
+      { "grade" : 90, "mean" : 75, "std" : 6 },
+      { "grade" : 87, "mean" : 90, "std" : 3 },
+      { "grade" : 85, "mean" : 85, "std" : 4 }
+   ]
+}
+Use an Aggregation Pipeline for Updates
+Starting in MongoDB 4.2, db.collection.findOneAndUpdate() can accept an aggregation pipeline for the update. The pipeline can consist of the following stages:
+
+$addFields and its alias $set
+$project and its alias $unset
+$replaceRoot and its alias $replaceWith.
+Using the aggregation pipeline allows for a more expressive update statement, such as expressing conditional updates based on current field values or updating one field using the value of another field(s).
+
+For example, create a collection students2 with the following documents:
+
+db.students2.insert([
+   {
+      "_id" : 1,
+      "grades" : [
+         { "grade" : 80, "mean" : 75, "std" : 6 },
+         { "grade" : 85, "mean" : 90, "std" : 4 },
+         { "grade" : 85, "mean" : 85, "std" : 6 }
+      ]
+   },
+   {
+      "_id" : 2,
+      "grades" : [
+         { "grade" : 90, "mean" : 75, "std" : 6 },
+         { "grade" : 87, "mean" : 90, "std" : 3 },
+         { "grade" : 85, "mean" : 85, "std" : 4 }
+      ]
+   }
+])
+The following operation finds a document where the _id field equals 1 and uses an aggregation pipeline to calculate a new field total from the grades field:
+
+db.students2.findOneAndUpdate(
+   { _id : 1 },
+   [ { $set: { "total" : { $sum: "$grades.grade" } } } ],  // The $set stage is an alias for ``$addFields`` stage
+   { returnNewDocument: true }
+)
+NOTE
+
+The $set used in the pipeline refers to the aggregation stage $set and not the update operator $set.
+
+The operation returns the updated document :
+
+{
+  "_id" : 1,
+  "grades" : [ { "grade" : 80, "mean" : 75, "std" : 6 }, { "grade" : 85, "mean" : 90, "std" : 4 }, { "grade" : 85, "mean" :85, "std" : 6 } ],
+  "total" : 250
+}

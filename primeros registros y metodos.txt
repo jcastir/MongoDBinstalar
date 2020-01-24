@@ -1,0 +1,90 @@
+
+
+Vamos a crear nuestros primeros registros en mongo 
+
+Para lo cual vamos a ejecutar los siguiente: 
+
+[root@localhost selinux]# mongo 
+MongoDB Enterprise >use myNewDatabase
+MongoDB Enterprise >db.myCollection.insertOne( { x: 1 } );
+MongoDB Enterprise >exit
+[root@localhost selinux]# mongo
+MongoDB Enterprise > use myNewDatabase
+switched to db myNewDatabase
+MongoDB Enterprise > db.myCollection.find();
+{ "_id" : ObjectId("5d5d3fd33938ed33d325a02a"), "x" : 1 }
+MongoDB Enterprise > exit
+bye
+[root@localhost selinux]#
+
+
+db.myCollection.insertOne() es uno de los métodos disponibles para hacer inserciones. 
+db.myCollection.find() es uno de los métodos para hacer búsquedas. 
+
+myCollection es la "colección" donde tenemos esos registros. 
+myNewDatabase es la base de datos que usamos para agrupar registros/colecciones y datos.
+
+
+
+
+db refers to the current database.
+myCollection is the name of the collection.
+If the mongo shell does not accept the name of a collection, you can use the alternative db.getCollection() syntax. For instance, if a collection name contains a space or hyphen, starts with a number, or conflicts with a built-in function:
+
+db.getCollection("3 test").find()
+db.getCollection("3-test").find()
+db.getCollection("stats").find()
+The mongo shell prompt has a limit of 4095 codepoints for each line. If you enter a line with more than 4095 codepoints, the shell will truncate it.
+
+For more documentation of basic MongoDB operations in the mongo shell, see:
+
+Getting Started Guide
+Insert Documents
+Query Documents
+Update Documents
+Delete Documents
+mongo Shell Methods
+[1]	If the deployment runs with access control, the operation returns different values based on user privileges. See listDatabases Behavior for details.
+Format Printed Results
+The db.collection.find() method returns a cursor to the results; however, in the mongo shell, if the returned cursor is not assigned to a variable using the var keyword, then the cursor is automatically iterated up to 20 times to print up to the first 20 documents that match the query. The mongo shell will prompt Type it to iterate another 20 times.
+
+To format the printed result, you can add the .pretty() to the operation, as in the following:
+
+db.myCollection.find().pretty()
+In addition, you can use the following explicit print methods in the mongo shell:
+
+print() to print without formatting
+print(tojson(<obj>)) to print with JSON formatting and equivalent to printjson()
+printjson() to print with JSON formatting and equivalent to print(tojson(<obj>))
+For more information and examples on cursor handling in the mongo shell, see Iterate a Cursor in the mongo Shell. See also Cursor Help for list of cursor help in the mongo shell.
+
+Multi-line Operations in the mongo Shell
+If you end a line with an open parenthesis ('('), an open brace ('{'), or an open bracket ('['), then the subsequent lines start with ellipsis ("...") until you enter the corresponding closing parenthesis (')'), the closing brace ('}') or the closing bracket (']'). The mongo shell waits for the closing parenthesis, closing brace, or the closing bracket before evaluating the code, as in the following example:
+
+> if ( x > 0 ) {
+... count++;
+... print (x);
+... }
+You can exit the line continuation mode if you enter two blank lines, as in the following example:
+
+> if (x > 0
+...
+...
+>
+Tab Completion and Other Keyboard Shortcuts
+The mongo shell supports keyboard shortcuts. For example,
+
+Use the up/down arrow keys to scroll through command history. See .dbshell documentation for more information on the .dbshell file.
+
+Use <Tab> to autocomplete or to list the completion possibilities, as in the following example which uses <Tab> to complete the method name starting with the letter 'c':
+
+db.myCollection.c<Tab>
+Because there are many collection methods starting with the letter 'c', the <Tab> will list the various methods that start with 'c'.
+
+For a full list of the shortcuts, see Shell Keyboard Shortcuts
+
+.mongorc.js File
+When starting, mongo checks the user’s HOME directory for a JavaScript file named .mongorc.js. If found, mongo interprets the content of .mongorc.js before displaying the prompt for the first time. If you use the shell to evaluate a JavaScript file or expression, either by using the --eval option on the command line or by specifying a .js file to mongo, mongo will read the .mongorc.js file after the JavaScript has finished processing. You can prevent .mongorc.js from being loaded by using the --norc option.
+
+Exit the Shell
+To exit the shell, type quit() or use the <Ctrl-C> shortcut.

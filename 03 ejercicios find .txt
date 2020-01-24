@@ -1,0 +1,330 @@
+Función Find en mongo
+
+db.collection.find()
+
+Selects documents in a collection or view and returns a cursor to the selected documents.
+
+Parameter	Type	Description
+query	document	Optional. Specifies selection filter using query operators. To return all documents in a collection, omit this parameter or pass an empty document ({}).
+projection	document	Optional. Specifies the fields to return in the documents that match the query filter. To return all fields in the matching documents, omit this parameter. For details, see Projection.
+Returns:	A cursor to the documents that match the query criteria. When the find() method “returns documents,” the method is actually returning a cursor to the documents.
+
+The projection parameter determines which fields are returned in the matching documents. The projection parameter takes a document of the following form:
+
+{ field1: <value>, field2: <value> ... }
+The <value> can be any of the following:
+
+1 or true to include the field in the return documents.
+
+0 or false to exclude the field.
+
+Expression using a Projection Operators.
+
+find() operations on views do not support the following projection operators:
+
+$
+$elemMatch
+$slice
+$meta
+NOTE
+
+For the _id field, you do not have to explicitly specify _id: 1 to return the _id field. The find() method always returns the _id field unless you specify _id: 0 to suppress the field.
+
+A projection cannot contain both include and exclude specifications, except for the exclusion of the _id field. In projections that explicitly include fields, the _id field is the only field that you can explicitly exclude.
+
+Cursor Handling
+Executing db.collection.find() in the mongo shell automatically iterates the cursor to display up to the first 20 documents. Type it to continue iteration.
+
+To access the returned documents with a driver, use the appropriate cursor handling mechanism for the driver language.
+
+Read Concern
+To specify the read concern for db.collection.find(), use the cursor.readConcern() method.
+
+Type Bracketing
+MongoDB treats some data types as equivalent for comparison purposes. For instance, numeric types undergo conversion before comparison. For most data types, however, comparison operators only perform comparisons on documents where the BSON type of the target field matches the type of the query operand. Consider the following collection:
+
+{ "_id": "apples", "qty": 5 }
+{ "_id": "bananas", "qty": 7 }
+{ "_id": "oranges", "qty": { "in stock": 8, "ordered": 12 } }
+{ "_id": "avocados", "qty": "fourteen" }
+
+The following query uses $gt to return documents where the value of qty is greater than 4.
+
+db.collection.find( { qty: { $gt: 4 } } )
+The query returns the following documents:
+
+{ "_id": "apples", "qty": 5 }
+{ "_id": "bananas", "qty": 7 }
+The document with _id equal to "avocados" is not returned because its qty value is of type string while the $gt operand is of type integer.
+
+The document with _id equal to "oranges" is not returned because its qty value is of type object.
+
+NOTE
+
+To enforce data types in a collection, use Schema Validation.
+
+Sessions
+New in version 4.0.
+
+For cursors created inside a session, you cannot call getMore outside the session.
+
+Similarly, for cursors created outside of a session, you cannot call getMore inside a session.
+
+Transactions
+db.collection.find() supports multi-document transactions.
+
+For cursors created outside of a transaction, you cannot call getMore inside the transaction.
+For cursors created in a transaction, you cannot call getMore outside the transaction.
+IMPORTANT
+
+In most cases, multi-document transaction incurs a greater performance cost over single document writes, and the availability of multi-document transactions should not be a replacement for effective schema design. For many scenarios, the denormalized data model (embedded documents and arrays) will continue to be optimal for your data and use cases. That is, for many scenarios, modeling your data appropriately will minimize the need for multi-document transactions.
+
+For additional transactions usage considerations (such as runtime limit and oplog size limit), see also Production Considerations.
+
+Client Disconnection
+Starting in MongoDB 4.2, if the client that issued the db.collection.find() disconnects before the operation completes, MongoDB marks the db.collection.find() for termination (i.e. killOp on the operation).
+
+Examples
+The examples in this section use documents from the bios collection where the documents generally have the form:
+
+{
+    "_id" : <value>,
+    "name" : { "first" : <string>, "last" : <string> },       // embedded document
+    "birth" : <ISODate>,
+    "death" : <ISODate>,
+    "contribs" : [ <string>, ... ],                           // Array of Strings
+    "awards" : [
+        { "award" : <string>, year: <number>, by: <string> }  // Array of embedded documents
+        ...
+    ]
+}
+To create and populate the bios collection, see The bios Example Collection.
+
+Find All Documents in a Collection
+The find() method with no parameters returns all documents from a collection and returns all fields for the documents. For example, the following operation returns all documents in the bios collection:
+
+db.bios.find()
+Find Documents that Match Query Criteria
+Query for Equality
+The following operation returns documents in the bios collection where _id equals 5:
+
+db.bios.find( { _id: 5 } )
+The following operation returns documents in the bios collection where the field last in the name embedded document equals "Hopper":
+
+db.bios.find( { "name.last": "Hopper" } )
+NOTE
+
+To access fields in an embedded document, use dot notation ("<embedded document>.<field>").
+
+Query Using Operators
+To find documents that match a set of selection criteria, call find() with the <criteria> parameter.
+
+MongoDB provides various query operators to specify the criteria.
+
+The following operation uses the $in operator to return documents in the bios collection where _id equals either 5 or ObjectId("507c35dd8fada716c89d0013"):
+
+db.bios.find(
+   { _id: { $in: [ 5, ObjectId("507c35dd8fada716c89d0013") ] } }
+)
+The following operation uses the $gt operator returns all the documents from the bios collection where birth is greater than new Date('1950-01-01'):
+
+db.bios.find( { birth: { $gt: new Date('1950-01-01') } } )
+The following operation uses the $regex operator to return documents in the bios collection where name.last field starts with the letter N (or is "LIKE N%")
+
+db.bios.find(
+   { "name.last": { $regex: /^N/ } }
+)
+For a list of the query operators, see Query Selectors.
+
+Query for Ranges
+Combine comparison operators to specify ranges for a field. The following operation returns from the bios collection documents where birth is between new Date('1940-01-01') and new Date('1960-01-01') (exclusive):
+
+db.bios.find( { birth: { $gt: new Date('1940-01-01'), $lt: new Date('1960-01-01') } } )
+For a list of the query operators, see Query Selectors.
+
+Query for Multiple Conditions
+The following operation returns all the documents from the bios collection where birth field is greater than new Date('1950-01-01') and death field does not exists:
+
+db.bios.find( {
+   birth: { $gt: new Date('1920-01-01') },
+   death: { $exists: false }
+} )
+For a list of the query operators, see Query Selectors.
+
+Query Embedded Documents
+The following examples query the name embedded field in the bios collection.
+
+Query Exact Matches on Embedded Documents
+The following operation returns documents in the bios collection where the embedded document name is exactly { first: "Yukihiro", last: "Matsumoto" }, including the order:
+
+db.bios.find(
+    { name: { first: "Yukihiro", last: "Matsumoto" } }
+)
+The name field must match the embedded document exactly. The query does not match documents with the following name fields:
+
+{
+   first: "Yukihiro",
+   aka: "Matz",
+   last: "Matsumoto"
+}
+
+{
+   last: "Matsumoto",
+   first: "Yukihiro"
+}
+Query Fields of an Embedded Document
+The following operation returns documents in the bios collection where the embedded document name contains a field first with the value "Yukihiro" and a field last with the value "Matsumoto". The query uses dot notation to access fields in an embedded document:
+
+db.bios.find(
+   {
+     "name.first": "Yukihiro",
+     "name.last": "Matsumoto"
+   }
+)
+The query matches the document where the name field contains an embedded document with the field first with the value "Yukihiro" and a field last with the value "Matsumoto". For instance, the query would match documents with name fields that held either of the following values:
+
+{
+  first: "Yukihiro",
+  aka: "Matz",
+  last: "Matsumoto"
+}
+
+{
+  last: "Matsumoto",
+  first: "Yukihiro"
+}
+For more information and examples, see also Query on Embedded/Nested Documents.
+
+Query Arrays
+Query for an Array Element
+The following examples query the contribs array in the bios collection.
+
+The following operation returns documents in the bios collection where the array field contribs contains the element "UNIX":
+
+db.bios.find( { contribs: "UNIX" } )
+The following operation returns documents in the bios collection where the array field contribs contains the element "ALGOL" or "Lisp":
+
+db.bios.find( { contribs: { $in: [ "ALGOL", "Lisp" ]} } )
+The following operation use the $all query operator to return documents in the bios collection where the array field contribs contains both the elements "ALGOL" and "Lisp":
+
+db.bios.find( { contribs: { $all: [ "ALGOL", "Lisp" ] } } )
+For more examples, see $all. See also $elemMatch.
+
+The following operation uses the $size operator to return documents in the bios collection where the array size of contribs is 4:
+
+db.bios.find( { contribs: { $size: 4 } } )
+For more information and examples of querying an array, see:
+
+Query an Array
+Query an Array of Embedded Documents
+For a list of array specific query operators, see Array.
+
+Query an Array of Documents
+The following examples query the awards array in the bios collection.
+
+The following operation returns documents in the bios collection where the awards array contains an element with award field equals "Turing:
+
+db.bios.find(
+   { "awards.award": "Turing Award" }
+)
+The following operation returns documents in the bios collection where the awards array contains at least one element with both the award field equals "Turing Award" and the year field greater than 1980:
+
+db.bios.find(
+   { awards: { $elemMatch: { award: "Turing Award", year: { $gt: 1980 } } } }
+)
+Use the $elemMatch operator to specify multiple criteria on an array element.
+
+For more information and examples of querying an array, see:
+
+Query an Array
+Query an Array of Embedded Documents
+For a list of array specific query operators, see Array.
+
+Projections
+The projection parameter specifies which fields to return. The parameter contains either include or exclude specifications, not both, unless the exclude is for the _id field.
+
+NOTE
+
+Unless the _id field is explicitly excluded in the projection document _id: 0, the _id field is returned.
+
+Specify the Fields to Return
+The following operation finds all documents in the bios collection and returns only the name field, contribs field and _id field:
+
+db.bios.find( { }, { name: 1, contribs: 1 } )
+NOTE
+
+Unless the _id field is explicitly excluded in the projection document _id: 0, the _id field is returned.
+
+Explicitly Excluded Fields
+The following operation queries the bios collection and returns all fields except the first field in the name embedded document and the birth field:
+
+db.bios.find(
+   { contribs: 'OOP' },
+   { 'name.first': 0, birth: 0 }
+)
+Explicitly Exclude the _id Field
+NOTE
+
+Unless the _id field is explicitly excluded in the projection document _id: 0, the _id field is returned.
+
+The following operation finds documents in the bios collection and returns only the name field and the contribs field:
+
+db.bios.find(
+   { },
+   { name: 1, contribs: 1, _id: 0 }
+)
+On Arrays and Embedded Documents
+The following operation queries the bios collection and returns the last field in the name embedded document and the first two elements in the contribs array:
+
+db.bios.find(
+   { },
+   {
+     _id: 0,
+     'name.last': 1,
+     contribs: { $slice: 2 }
+   }
+)
+SEE ALSO
+
+Project Fields to Return from Query
+
+Iterate the Returned Cursor
+The find() method returns a cursor to the results.
+
+In the mongo shell, if the returned cursor is not assigned to a variable using the var keyword, the cursor is automatically iterated to access up to the first 20 documents that match the query. You can set the DBQuery.shellBatchSize variable to change the number of automatically iterated documents.
+
+To manually iterate over the results, assign the returned cursor to a variable with the var keyword, as shown in the following sections.
+
+With Variable Name
+The following example uses the variable myCursor to iterate over the cursor and print the matching documents:
+
+
+Order Documents in the Result Set
+The sort() method orders the documents in the result set. The following operation returns documents in the bios collection sorted in ascending order by the name field:
+
+db.bios.find().sort( { name: 1 } )
+
+sort() corresponds to the ORDER BY statement in SQL.
+
+Limit the Number of Documents to Return
+The limit() method limits the number of documents in the result set. The following operation returns at most 5 documents in the bios collection:
+
+db.bios.find().limit( 5 )
+limit() corresponds to the LIMIT statement in SQL.
+
+Set the Starting Point of the Result Set
+The skip() method controls the starting point of the results set. The following operation skips the first 5 documents in the bios collection and returns all remaining documents:
+
+db.bios.find().skip( 5 )
+Specify Collation
+Collation allows users to specify language-specific rules for string comparison, such as rules for lettercase and accent marks.
+
+The collation() method specifies the collation for the db.collection.find() operation.
+
+db.bios.find( { "name.last": "hopper" } ).collation( { locale: "en_US", strength: 1 } )
+Combine Cursor Methods
+The following statements chain cursor methods limit() and sort():
+
+db.bios.find().sort( { name: 1 } ).limit( 5 )
+db.bios.find().limit( 5 ).sort( { name: 1 } )
+The two statements are equivalent; i.e. the order in which you chain the limit() and the sort() methods is not significant. Both statements return the first five documents, as determined by the ascending sort order on ‘name’.

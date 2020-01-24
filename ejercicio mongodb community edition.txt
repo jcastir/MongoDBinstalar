@@ -1,0 +1,95 @@
+Run MongoDB Community Edition
+
+Vamos a arrancar mongodb en su versión más sencilla, al menos para hacer pruebas durante el curso. 
+
+La community edition tiene los siguientes requerimientos:
+
+Directory Paths
+
+/var/lib/mongo (the data directory)
+/var/log/mongodb (the log directory)
+/var/log/mongodb/mongod.log (the log)
+
+Cuando se instala via paquete estos directorios y fichero ya existen como se puede comprobar. Si se instala sin paquetes habría que crearlos manualmente.
+
+[root@localhost ~]# cat /etc/passwd |grep mongo
+mongod:x:498:499:mongod:/var/lib/mongo:/bin/false
+[root@localhost ~]# cat /etc/group  |grep mongo
+mongod:x:499:
+
+
+Uno de los factores más criticos con las conexiones remotos a la base puede ser Selinux. Es conveniente desactivarlo. 
+
+
+[root@localhost ~]# cd /etc/selinux/
+[root@localhost selinux]# ls
+config  restorecond.conf  restorecond_user.conf  semanage.conf  targeted
+[root@localhost selinux]# cat config
+
+# This file controls the state of SELinux on the system.
+# SELINUX= can take one of these three values:
+#     enforcing - SELinux security policy is enforced.
+#     permissive - SELinux prints warnings instead of enforcing.
+#     disabled - No SELinux policy is loaded.
+SELINUX=enforcing   <----- activado actualmente , cambiarlo por disabled y reiniciar.  
+# SELINUXTYPE= can take one of these two values:
+#     targeted - Targeted processes are protected,
+#     mls - Multi Level Security protection.
+SELINUXTYPE=targeted
+
+[root@localhost selinux]# selinux
+selinuxconlist  selinuxdefcon   selinuxenabled
+[root@localhost selinux]# sestatus
+SELinux status:                 enabled
+SELinuxfs mount:                /selinux
+Current mode:                   enforcing
+Mode from config file:          enforcing
+Policy version:                 24
+Policy from config file:        targeted
+
+
+Dos formas de desactivarlo en caliente
+
+# echo 0 > /selinux/enforce
+
+# setenforce 0
+
+[root@localhost selinux]# echo 0 > /selinux/enforce
+[root@localhost selinux]# setenforce 0
+[root@localhost selinux]#
+[root@localhost selinux]# sestatus
+SELinux status:                 enabled
+SELinuxfs mount:                /selinux
+Current mode:                   permissive <----
+Mode from config file:          enforcing
+Policy version:                 24
+Policy from config file:        targeted
+[root@localhost selinux]#
+
+
+Arrancando mongo por primera vez 
+
+[root@localhost selinux]# service mongod status
+mongod is stopped
+[root@localhost selinux]# service mongod start
+Starting mongod:                                           [  OK  ]
+[root@localhost selinux]#
+
+
+Podemos hacer un seguimientode arranques/paradas en 
+[root@localhost selinux]# cat /var/log/mongodb/mongod.log
+
+La configuración general de opciones la tenemos en /etc/mongod.conf
+
+[root@localhost selinux]# netstat -na |grep 27017 
+tcp        0      0 127.0.0.1:27017             0.0.0.0:*                   LISTEN
+unix  2      [ ACC ]     STREAM     LISTENING     12103  /tmp/mongodb-27017.sock
+
+
+
+
+
+
+
+
+

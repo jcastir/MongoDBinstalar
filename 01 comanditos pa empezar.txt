@@ -1,0 +1,155 @@
+https://docs.mongodb.com/manual/crud/
+
+
+db.users.insertOne( 
+
+{ name:"pepito", age : 40, status: "pending" }
+
+)
+
+MongoDB Enterprise Cluster0-shard-0:PRIMARY>
+MongoDB Enterprise Cluster0-shard-0:PRIMARY> db.users.find() ;
+{ "_id" : ObjectId("5c8f6985e49573620c65997e"), "name" : "pepito", "age" : 40, "
+status" : "pending" }
+MongoDB Enterprise Cluster0-shard-0:PRIMARY> db.users.find().count();
+1
+MongoDB Enterprise Cluster0-shard-0:PRIMARY>
+
+
+db.users.insertOne( 
+
+{ name:"juanito", age : 20, status: "not pending" }
+
+)
+
+db.users.find ( 
+
+{ age: { $gt : 21}} 
+
+)
+
+MongoDB Enterprise Cluster0-shard-0:PRIMARY> db.users.find (
+...
+... { age: { $gt : 21}}
+...
+... )
+{ "_id" : ObjectId("5c8f6985e49573620c65997e"), "name" : "pepito", "age" : 40, "
+status" : "pending" }
+MongoDB Enterprise Cluster0-shard-0:PRIMARY>
+
+Update Operations
+
+db.users.updateOne( 
+
+{ age : { $eq: 40 } }, { $set: { status : "pendinging" } }
+)
+
+; 
+
+
+
+Bulk Write Operations
+
+
+{ "_id" : 1, "char" : "Brisbane", "class" : "monk", "lvl" : 4 },
+{ "_id" : 2, "char" : "Eldon", "class" : "alchemist", "lvl" : 3 },
+{ "_id" : 3, "char" : "Meldane", "class" : "ranger", "lvl" : 3 }
+
+
+
+   db.characters.bulkWrite(
+      [
+         { insertOne :
+            {
+               "document" :
+               {
+                  "_id" : 4, "char" : "Dithras", "class" : "barbarian", "lvl" : 4
+               }
+            }
+         },
+         { insertOne :
+            {
+               "document" :
+               {
+                  "_id" : 5, "char" : "Taeln", "class" : "fighter", "lvl" : 3
+               }
+            }
+         },
+         { updateOne :
+            {
+               "filter" : { "char" : "Eldon" },
+               "update" : { $set : { "status" : "Critical Injury" } }
+            }
+         },
+         { deleteOne :
+            { "filter" : { "char" : "Brisbane"} }
+         },
+         { replaceOne :
+            {
+               "filter" : { "char" : "Meldane" },
+               "replacement" : { "char" : "Tanys", "class" : "oracle", "lvl" : 4 }
+            }
+         }
+      ]
+   );
+
+
+Text Search
+
+db.stores.insert(
+   [
+     { _id: 1, name: "Java Hut", description: "Coffee and cakes" },
+     { _id: 2, name: "Burger Buns", description: "Gourmet hamburgers" },
+     { _id: 3, name: "Coffee Shop", description: "Just coffee" },
+     { _id: 4, name: "Clothes Clothes Clothes", description: "Discount clothing" },
+     { _id: 5, name: "Java Shopping", description: "Indonesian goods" }
+   ]
+)
+
+
+db.stores.createIndex( { name: "text", description: "text" } )
+
+db.stores.find( { $text: { $search: "java coffee shop" } } )
+db.stores.find( { $text: { $search: "java shop -coffee" } } )
+
+
+MongoDB Enterprise Cluster0-shard-0:PRIMARY> db.stores.find( { $text: { $search:
+ "java coffee shop" } } )
+{ "_id" : 3, "name" : "Coffee Shop", "description" : "Just coffee" }
+{ "_id" : 1, "name" : "Java Hut", "description" : "Coffee and cakes" }
+{ "_id" : 5, "name" : "Java Shopping", "description" : "Indonesian goods" }
+MongoDB Enterprise Cluster0-shard-0:PRIMARY> db.stores.find( { $text: { $search:
+ "java shop -coffee" } } )
+{ "_id" : 5, "name" : "Java Shopping", "description" : "Indonesian goods" }
+MongoDB Enterprise Cluster0-shard-0:PRIMARY>
+
+Exact Phrase 
+
+db.stores.find( { $text: { $search: "\"coffee shop\"" } } )
+
+Sorting 
+
+MongoDB Enterprise Cluster0-shard-0:PRIMARY> db.stores.find().sort({ name: -1 })
+;
+{ "_id" : 5, "name" : "Java Shopping", "description" : "Indonesian goods" }
+{ "_id" : 1, "name" : "Java Hut", "description" : "Coffee and cakes" }
+{ "_id" : 3, "name" : "Coffee Shop", "description" : "Just coffee" }
+{ "_id" : 4, "name" : "Clothes Clothes Clothes", "description" : "Discount cloth
+ing" }
+{ "_id" : 2, "name" : "Burger Buns", "description" : "Gourmet hamburgers" }
+MongoDB Enterprise Cluster0-shard-0:PRIMARY> db.stores.find().sort({ name: 1 });
+
+{ "_id" : 2, "name" : "Burger Buns", "description" : "Gourmet hamburgers" }
+{ "_id" : 4, "name" : "Clothes Clothes Clothes", "description" : "Discount cloth
+ing" }
+{ "_id" : 3, "name" : "Coffee Shop", "description" : "Just coffee" }
+{ "_id" : 1, "name" : "Java Hut", "description" : "Coffee and cakes" }
+{ "_id" : 5, "name" : "Java Shopping", "description" : "Indonesian goods" }
+MongoDB Enterprise Cluster0-shard-0:PRIMARY>
+
+
+
+
+
+
+
